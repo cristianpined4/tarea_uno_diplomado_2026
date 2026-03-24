@@ -11,7 +11,8 @@ Al iniciar por primera vez, se ejecutan scripts SQL para crear la base de datos,
 - `sql-init/v1_20260323_create_schema.sql`: crea el esquema `mantenimiento_pizarras`.
 - `sql-init/v2_20260323_create_tables.sql`: crea las tablas `pizarras`, `tecnicos` y `reportes_fallos` con llaves foráneas.
 - `sql-init/v1_20260323_create_functions_and_triggers.sql`: crea la función y trigger para actualizar el estado de la pizarra al registrar un fallo.
-- `sql-init/v2_20260323_insert_data.sql`: inserta datos iniciales de prueba.
+- `sql-init/v1_20260323_indexes.sql`: define índices secundarios en `fecha` y `tecnico_id` de la tabla `reportes_fallos` para optimizar el rendimiento de lectura.
+- `sql-init/v3_20260323_insert_data.sql`: inserta datos iniciales de prueba.
 - `sql-init/v1_20260323_querys_data.sql`: ejecuta consultas básicas de verificación (`SELECT *`) sobre las tablas.
 
 ## Orden de ejecución SQL
@@ -22,8 +23,9 @@ El archivo `main.sql` ejecuta este orden:
 2. `v1_20260323_create_schema.sql`
 3. `v2_20260323_create_tables.sql`
 4. `v1_20260323_create_functions_and_triggers.sql`
-5. `v2_20260323_insert_data.sql`
-6. `v1_20260323_querys_data.sql`
+5. `v1_20260323_indexes.sql`
+6. `v3_20260323_insert_data.sql`
+7. `v1_20260323_querys_data.sql`
 
 ## Requisitos
 
@@ -51,6 +53,40 @@ Se incluye un trigger `AFTER INSERT` sobre `reportes_fallos` que ejecuta la func
 
 - Si se inserta un reporte con `pizarra_id`, la tabla `pizarras` se actualiza automáticamente a estado `'En Reparación'`.
 - El trigger es `FOR EACH ROW` para procesar cada reporte insertado individualmente.
+
+## Optimización mediante Índices (Diseño Físico)
+
+Se han creado dos índices secundarios en la tabla `reportes_fallos` para mejorar el rendimiento de consultas:
+
+### Índices creados:
+
+1. **idx_reportes_fallos_fecha**: Índice B-tree en la columna `fecha`.
+   - Optimiza búsquedas por rango temporal (`WHERE fecha BETWEEN ... AND ...`).
+   - Mejora consultas con `ORDER BY fecha`.
+   - Reduce I/O de disco favoreciendo acceso en O(log n) vs. table scan en O(n).
+
+2. **idx_reportes_fallos_tecnico_id**: Índice B-tree en la columna `tecnico_id`.
+   - Optimiza JOINs con tablas `tecnicos`.
+   - Acelera búsquedas de reportes por técnico asignado.
+   - Mejora agregaciones y análisis de carga de trabajo.
+
+### Balance: Rendimiento de Lectura vs. Costo de Escritura
+
+(Referencia: de Marqués, Capítulo 1.5 y 8.1.2)
+
+**Ventajas:**
+
+- Consultas SELECT más rápidas gracias a búsquedas en O(log n).
+- Reducción de CPU y I/O innecesarios.
+- Mejor experiencia en reportes y dashboards.
+
+**Costos:**
+
+- Todo INSERT/UPDATE en `reportes_fallos` requiere actualizar los índices (overhead O(log n)).
+- Almacenamiento adicional en disco (~20-30% según cardinalidad).
+- Mantenimiento de coherencia entre tabla e índices.
+
+**Decisión:** Para este escenario es aceptable el balance porque `reportes_fallos` es tabla de lectura frecuente y escritura ocasional (no es OLTP masivo). Si la carga de escritura superara 1000 operaciones/segundo, se debería evaluar particionamiento temporal o tabla staging.
 
 ## Acceso a los servicios
 

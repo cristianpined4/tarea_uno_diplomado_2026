@@ -3,6 +3,7 @@
 -- Consultas para pizarras
 SELECT * FROM pizarras;
 
+
 -- Consultas para tecnicos
 SELECT * FROM tecnicos;
 
