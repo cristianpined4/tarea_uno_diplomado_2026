@@ -1,4 +1,4 @@
--- v1_20260323_insert_data.sql
+-- v2_20260323_insert_data.sql
 
 -- Insertar pizarras
 INSERT INTO pizarras (ubicacion, estado) VALUES
@@ -17,8 +17,4 @@ INSERT INTO tecnicos (nombre, especialidad) VALUES
 
 -- Insertar reportes_fallos
 INSERT INTO reportes_fallos (fecha, descripcion, pizarra_id, tecnico_id) VALUES
-('2026-01-10', 'Pantalla no enciende', 1, 1),
-('2026-01-15', 'Fallo de conexión WiFi', 2, 2),
-('2026-02-01', 'Táctil no responde', 3, 3),
-('2026-02-20', 'Cable HDMI dañado', 4, 4),
-('2026-03-05', 'Software desactualizado', 5, 2);
+('2026-01-10', 'Pantalla no enciende', 1, 1);
